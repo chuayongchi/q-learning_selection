@@ -2,161 +2,162 @@ import pandas as pd
 import numpy as np
 from env import GeneEnv
 from agent import Agent
-from helper import plot
 import matplotlib.pyplot as plt
+import time
+
+st = time.time()
+timestamp = time.strftime("%Y%m%d-%H%M%S")
 
 df = pd.read_csv('./data/data_degenes_with_ance_sample_gse108110.csv', index_col=0)
 ggc_df = pd.read_csv('./data/WGCNA_Matrix_GSE108110_Final.csv', index_col=0)
 top_gene_list = pd.read_csv('./data/gene_sign_list_GSE108110.csv')
 
-sample1 = np.array(df.iloc[0].values.tolist())
-sample2 = np.array(df.iloc[1].values.tolist())
-sample3 = np.array(df.iloc[2].values.tolist())
-sample4 = np.array(df.iloc[3].values.tolist())
-sample5 = np.array(df.iloc[4].values.tolist())
-sample6 = np.array(df.iloc[5].values.tolist())
-sample7 = np.array(df.iloc[6].values.tolist())
-sample8 = np.array(df.iloc[7].values.tolist())
-sample9 = np.array(df.iloc[8].values.tolist())
+# sample1 = np.array(df.iloc[0].values.tolist())
+# sample2 = np.array(df.iloc[1].values.tolist())
+# sample3 = np.array(df.iloc[2].values.tolist())
+# sample4 = np.array(df.iloc[3].values.tolist())
+# sample5 = np.array(df.iloc[4].values.tolist())
+# sample6 = np.array(df.iloc[5].values.tolist())
+# sample7 = np.array(df.iloc[6].values.tolist())
+# sample8 = np.array(df.iloc[7].values.tolist())
+# sample9 = np.array(df.iloc[8].values.tolist())
+samples = [np.array(df.iloc[i].values.tolist()) for i in range(9)]
 
-sample_obj = {
-    "sample1" : sample1,
-    "sample2" : sample2,
-    "sample3" : sample3,
-    "sample4" : sample4,
-    "sample5" : sample5,
-    "sample6" : sample6,
-    "sample7" : sample7,
-    "sample8" : sample8,
-    "sample9" : sample9
-}
+# sample_obj = {
+#     "sample1" : sample1,
+#     "sample2" : sample2,
+#     "sample3" : sample3,
+#     "sample4" : sample4,
+#     "sample5" : sample5,
+#     "sample6" : sample6,
+#     "sample7" : sample7,
+#     "sample8" : sample8,
+#     "sample9" : sample9
+# }
+sample_obj = {f"sample{i+1}": sample for i, sample in enumerate(samples)}
 
 temp_gene_id = ggc_df.index
 gene_id = temp_gene_id.tolist()
-temp_top_gene_id = top_gene_list.iloc[:,0]
-top_gene_id_list = temp_top_gene_id.tolist()
-print("top_gene_list: ", top_gene_id_list)
-print("gene id: ",gene_id)
-print("ggc_df: ",ggc_df)
-
+top_gene_id_list = top_gene_list.iloc[:,0].tolist()
 count_row = len(ggc_df)
-print(count_row)
-size = len(top_gene_list)
-    
-num_states = 2**(11)
-print(num_states)
-state_space = []
+num_states = 2**(len(top_gene_list))
 num_actions = count_row
-
 terminated_index = count_row # int for loop break, index that out of range
-log_action = [terminated_index] # index that make the read from array out of range, to represent the terminated
-terminated = False
-n = 0
-num_iteration = 0
-num_episodes = 200
+
+num_episodes = 2000
 record = 0
 total_score = 0
+selected_gene_counter = []
+
 plot_connectivity = []
 plot_mean_scores = []
 plot_rewards = []
 
-cul_reward = 0
-reward=0
-selected_gene = 0
-selected_gene_list = []
-selected_gene_lists = []
-gene_markers = []
-final = []
-actions_space = num_actions+1
-q_table = np.zeros((num_states, actions_space))
-
-for key, value in sample_obj.items() :
-    print("sample: ",key, value)
+# Training loop
+for key, value in sample_obj.items():
+    print(f"Processing {key}...")
     env = GeneEnv(ggc_df, top_gene_id_list, count_row, gene_id, value)
     agent = Agent(num_states, num_actions, num_episodes, terminated_index)
     top_gene_list_index = env.get_index_top_genes()
-# Start training
+    
     for episodes in range(num_episodes):
-        num_iteration = num_iteration + 1
-        print("loop ", episodes)
-        print("check reward: ", reward)
+        terminated = False
+        log_action = [terminated_index]  # Reset log for each episode
         cul_reward = 0
-        while (not(terminated)):
-            state_old = agent.get_state(env, terminated_index, top_gene_list_index) #need to convert to index
+        
+        while not terminated:
+            state_old = agent.get_state(env, terminated_index, top_gene_list_index)
             state_old_index = agent.get_state_index(state_old)
-            print("old state is: ", state_old)
-            print("old state index is: ", state_old_index)
-
-            action = agent.get_action(state_old_index) # use state index to get action
-            print("action : ", action)
-
-            if (action not in log_action):
+            action = agent.get_action(state_old_index)
+            
+            if action not in log_action:
                 terminated, selection, gene_expressed = env.play_step(action, terminated_index)
                 log_action.append(action)
                 
                 selected_gene = agent.get_selected_gene(action)
-                selected_gene_list.append(selected_gene)
-                selected_gene_lists.append(selected_gene)
-                print("len(selected_gene_list) :", len(selected_gene_list))
-
                 reward = agent.cal_reward(log_action, env, selected_gene, top_gene_list_index, terminated, gene_expressed)
                 cul_reward += reward
+                
                 state_new = agent.get_state(env, terminated_index, top_gene_list_index)
                 state_new_index = agent.get_state_index(state_new)
-                agent.update_Qtable(state_old_index, action, reward, state_new_index, terminated)       
+                agent.update_Qtable(state_old_index, action, reward, state_new_index, terminated)
             else:
-                print("action has been repeatedlly selected and considered action index as terminated_index")
+                # Handle case where action is repeated
                 action = terminated_index
                 terminated, selection, gene_expressed = env.play_step(action, terminated_index)
                 log_action.append(action)
-
-                selected_gene = agent.get_selected_gene(action)
-                selected_gene_list.append(selected_gene)
-                selected_gene_lists.append(selected_gene)
-
                 reward = agent.cal_reward(log_action, env, selected_gene, top_gene_list_index, terminated, gene_expressed)
                 cul_reward += reward
                 state_new = agent.get_state(env, terminated_index, top_gene_list_index)
                 state_new_index = agent.get_state_index(state_new)
-                log_action= [terminated_index]
-
                 agent.update_Qtable(state_old_index, action, reward, state_new_index, terminated)
-                plot_mean_scores.append(reward)
-                reward = 0
-
+        
+        # Log cumulative reward and connectivity
         plot_rewards.append(cul_reward)
         connectivity = env.cal_max_connectivity(selection)
         if connectivity > record:
             record = connectivity
                 
-        print("culmulative reward :", cul_reward)
-        print('Number of episodes', episodes, 'Connectivity', connectivity, 'Record:', record)
-
-        plot_connectivity.append(cul_reward)
+        plot_connectivity.append(connectivity)
         total_score += connectivity
-        mean_score = total_score / (episodes+1)
+        plot_mean_scores.append(total_score / (episodes + 1))
         
-        plot(plot_connectivity, plot_mean_scores, num_iteration)
-        print("cul reward:", cul_reward)
-        terminated = False
-        print("num_iteration", num_iteration )
-        if (num_iteration >= 1790):
-            final = selected_gene_list
-            q_table = agent.model.get_Q_table()
-        selected_gene_list = []
+        print(f"Episode {episodes}: Cumulative Reward: {cul_reward}, Connectivity: {connectivity}, Record: {record}")
+
+        # Track selected genes in this episode
+        selected_gene_counter.append(log_action)
+
+        # Reset the environment after each episode
         env.reset()
 
-gene_markers_count = []
-print("final :",final)
-for item in (selected_gene_lists):
-    if ((item != terminated_index) and (gene_id[item] not in gene_markers)):
-        count = selected_gene_lists.count(item)
-        gene_markers.append(gene_id[item])
-        gene_markers_count.append(count)
+# After training is done, plot the results
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(plot_rewards, label='Cumulative Reward')
+plt.xlabel('Episodes')
+plt.ylabel('Reward')
+plt.title('Cumulative Reward Over Episodes')
+plt.legend()
 
-selected_gene_count = zip(gene_markers, gene_markers_count)
-selected_gene_count_df = pd.DataFrame(selected_gene_count)
-selected_gene_count_df.to_csv('1.5_cross_sample_selected_gene_count_stateGSE108110_1200-2.csv')
-print(plot_rewards)
+plt.subplot(1, 2, 2)
+plt.plot(plot_connectivity, label='Connectivity', color='orange')
+plt.plot(plot_mean_scores, label='Mean Score', color='green')
+plt.xlabel('Episodes')
+plt.ylabel('Scores')
+plt.title('Connectivity and Mean Scores Over Episodes')
+plt.legend()
+
+plt.tight_layout()
+# plt.show()
+plt.savefig(f'training_GSE108110_results_plot_{timestamp}.png')
+
+# Check the structure and length of each row
+for i, row in enumerate(selected_gene_counter):
+    print(f"Row {i} length: {len(row)}")
+
+# You can also print the first few rows to inspect
+print(selected_gene_counter[:5])
+
+max_length = max(len(row) for row in selected_gene_counter)
+
+# Pad rows dynamically to match the longest row (with None values for missing entries)
+padded_selected_gene_counter = [
+    row + [None] * (max_length - len(row)) for row in selected_gene_counter
+]
+
+# Create DataFrame with dynamic column names based on the longest row
+selected_gene_df = pd.DataFrame(
+    padded_selected_gene_counter, 
+    columns=[f"Gene{idx+1}" for idx in range(max_length)]
+)
+
+# Save the DataFrame to a CSV file
+selected_gene_df.to_csv('final_v2_cross_sample_selected_gene_count_stateGSE108110_2000.csv', index=False)
+
+q_table = agent.model.get_Q_table()
 q_table_df = pd.DataFrame(q_table)
-q_table_df.to_csv('1.5_cross_sample_q-table_1200_gse108110-2.csv')
+q_table_df.to_csv('final_v2_cross_sample_q-table_2000_GSE108110.csv')
+
+et = time.time()
+elapsed_time = et - st
+print('Execution time:', elapsed_time, 'seconds')
