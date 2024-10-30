@@ -1,6 +1,8 @@
 # Q-learning for Selection of Genetic Markers Associated with Acne
+Using Q-learning to Identify Genetic Markers in Acne Gene Expression Data
 
-This repository contains the code for a Q-learning model that selects genetic markers related to acne, based on gene expression data.
+![License](https://img.shields.io/badge/license-CC%20BY--NC--ND%204.0-blue)
+![Python](https://img.shields.io/badge/python-3.8%2B-blue)
 
 ## Table of Contents
 - [Overview](#overview)
@@ -11,6 +13,11 @@ This repository contains the code for a Q-learning model that selects genetic ma
 
 ## Overview
 This project applies Q-learning, a type of reinforcement learning, to identify genetic markers associated with acne from gene expression datasets. The code processes gene expression data and trains a Q-learning model to select the most relevant genes.
+
+## Module Architecture
+The diagram below shows the high-level architecture of the model, including data loading, Q-learning training loop, and output generation:
+
+![Module Architecture](assets/module_architecture.png)
 
 ## Installation
 To run the code, first clone the repository and install the dependencies.
@@ -26,6 +33,9 @@ To execute the Q-learning model on one of the provided datasets, use the followi
 python qlearning_acne.py --dataset GSE108110
 ```
 You can replace GSE108110 with other dataset identifiers like GSE53795 or GSE6475 as needed.
+
+## Data Preparation
+Prepare your dataset in the required format. Example datasets can be downloaded from [GEO](https://www.ncbi.nlm.nih.gov/geo/).
 
 ## File Structure
 ```
