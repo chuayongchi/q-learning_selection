@@ -6,7 +6,9 @@ Using Q-learning to Identify Genetic Markers in Acne Gene Expression Data
 
 ## Table of Contents
 - [Overview](#overview)
+- [Module Architecture](#module-architecture)
 - [Installation](#installation)
+- [Prerequisites](#prerequisites)
 - [Usage](#usage)
 - [File Structure](#file-structure)
 - [License](#license)
@@ -18,6 +20,11 @@ This project applies Q-learning, a type of reinforcement learning, to identify g
 The diagram below shows the high-level architecture of the model, including data loading, Q-learning training loop, and output generation:
 
 ![Module Architecture](assets/module_architecture.png)
+
+## Prerequisites
+- Python 3.8 or higher
+- R 4.0 or higher (for data preprocessing)
+- Basic understanding of reinforcement learning concepts
 
 ## Installation
 To run the code, first clone the repository and install the dependencies.
