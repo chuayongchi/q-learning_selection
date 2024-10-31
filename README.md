@@ -29,8 +29,8 @@ The diagram below shows the high-level architecture of the model, including data
 ## Installation
 To run the code, first clone the repository and install the dependencies.
 ```
-git clone https://github.com/yourusername/genetic-markers-acne.git
-cd genetic-markers-acne
+git clone [https://github.com/yourusername/genetic-markers-acne.git](https://github.com/chuayongchi/q-learning_selection.git)
+cd q-learning_selection
 ```
 Then, perform the virtual environment setup and the installation of the dependencie
 ```
