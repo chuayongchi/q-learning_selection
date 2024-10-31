@@ -31,6 +31,11 @@ To run the code, first clone the repository and install the dependencies.
 ```
 git clone https://github.com/yourusername/genetic-markers-acne.git
 cd genetic-markers-acne
+```
+Then, perform the virtual environment setup and the installation of the dependencie
+```
+python -m venv env
+source env/bin/activate
 pip install -r requirements.txt
 ```
 
